@@ -15,7 +15,7 @@
 
 package main
 
-import "s3share-cli/cmd"
+import "github.com/maxr1998/s3share-cli/cmd"
 
 func main() {
 	cmd.Execute()

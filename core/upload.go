@@ -19,12 +19,12 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"github.com/jxskiss/base62"
+	"github.com/maxr1998/s3share-cli/conf"
+	"github.com/maxr1998/s3share-cli/crypto"
+	"github.com/maxr1998/s3share-cli/store"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
-	"s3share-cli/conf"
-	"s3share-cli/crypto"
-	"s3share-cli/store"
 )
 
 type ProgressReaderProvider func(upstreamReader io.Reader, fileName string, fileSize int64) io.Reader

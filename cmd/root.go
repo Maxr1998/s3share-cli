@@ -16,9 +16,9 @@
 package cmd
 
 import (
+	"github.com/maxr1998/s3share-cli/conf"
+	"github.com/maxr1998/s3share-cli/store"
 	"os"
-	"s3share-cli/conf"
-	"s3share-cli/store"
 
 	"github.com/spf13/cobra"
 )

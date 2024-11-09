@@ -18,13 +18,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/maxr1998/s3share-cli/conf"
+	"github.com/maxr1998/s3share-cli/core"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
 	"os"
-	"s3share-cli/conf"
-	"s3share-cli/core"
 	"time"
 )
 
