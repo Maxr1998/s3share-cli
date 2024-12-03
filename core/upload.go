@@ -60,11 +60,10 @@ func UploadFile(path string, progressReaderProvider ProgressReaderProvider) (*Up
 	fileSize := fileStat.Size()
 
 	// Encrypt filename
-	nameCtx, err := crypto.MakeAesCtrContext(key)
+	encryptedFileName, err := crypto.EncryptString(fileName, key)
 	if err != nil {
 		return nil, err
 	}
-	encryptedFileName := base64.StdEncoding.EncodeToString(nameCtx.EncryptBytes([]byte(fileName)))
 
 	// Encrypt file
 	fileCtx, err := crypto.MakeAesCtrContext(key)
@@ -79,10 +78,9 @@ func UploadFile(path string, progressReaderProvider ProgressReaderProvider) (*Up
 
 	// Store metadata
 	metadata := store.FileMetadata{
-		Name:   encryptedFileName,
-		NameIv: base64.StdEncoding.EncodeToString(nameCtx.Iv),
-		Iv:     base64.StdEncoding.EncodeToString(fileCtx.Iv),
-		Size:   fileSize,
+		Name: *encryptedFileName,
+		Iv:   base64.StdEncoding.EncodeToString(fileCtx.Iv),
+		Size: fileSize,
 	}
 
 	if err = store.WriteFileMetadata(fileId, metadata); err != nil {

@@ -1,8 +1,9 @@
 package store
 
+import "github.com/maxr1998/s3share-cli/crypto"
+
 type FileMetadata struct {
-	Name   string `json:"name"`
-	NameIv string `json:"name_iv"`
-	Iv     string `json:"iv"`
-	Size   int64  `json:"size"`
+	Name crypto.EncryptedValue `json:"name"`
+	Iv   string                `json:"iv"`
+	Size int64                 `json:"size"`
 }

@@ -19,6 +19,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base64"
 	"github.com/maxr1998/s3share-cli/conf"
 	"io"
 )
@@ -26,6 +27,12 @@ import (
 type EncryptionContext struct {
 	Stream cipher.Stream
 	Iv     []byte
+}
+
+// EncryptedValue represents an encrypted value with an IV, both encoded in base64.
+type EncryptedValue struct {
+	Value string `json:"value"`
+	Iv    string `json:"iv"`
 }
 
 // MakeAesCtrContext creates an AES-256 CTR encryption context using the given key.
@@ -56,6 +63,19 @@ func (ctx *EncryptionContext) EncryptBytes(data []byte) []byte {
 	encrypted := make([]byte, len(data))
 	ctx.Stream.XORKeyStream(encrypted, data)
 	return encrypted
+}
+
+// EncryptString encrypts the given string with a fresh encryption context and returns the encrypted value.
+func EncryptString(value string, key []byte) (*EncryptedValue, error) {
+	ctx, err := MakeAesCtrContext(key)
+	if err != nil {
+		return nil, err
+	}
+	encrypted := ctx.EncryptBytes([]byte(value))
+	return &EncryptedValue{
+		Value: base64.StdEncoding.EncodeToString(encrypted),
+		Iv:    base64.StdEncoding.EncodeToString(ctx.Iv),
+	}, nil
 }
 
 // GenerateAes256Key generates a random AES-256 key.
