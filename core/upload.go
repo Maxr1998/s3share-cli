@@ -16,6 +16,7 @@
 package core
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"encoding/base64"
 	"github.com/jxskiss/base62"
@@ -60,7 +61,7 @@ func UploadFile(path string, progressReaderProvider ProgressReaderProvider) (*Up
 	fileSize := fileStat.Size()
 
 	// Encrypt filename
-	encryptedFileName, err := crypto.EncryptString(fileName, key)
+	encryptedFileName, err := crypto.EncryptBytesToString([]byte(fileName), key)
 	if err != nil {
 		return nil, err
 	}
@@ -71,16 +72,24 @@ func UploadFile(path string, progressReaderProvider ProgressReaderProvider) (*Up
 		return nil, err
 	}
 
-	progressReader := progressReaderProvider(fileCtx.Encrypt(file), fileName, fileSize)
+	hash := md5.New()
+	progressReader := progressReaderProvider(fileCtx.Encrypt(io.TeeReader(file, hash)), fileName, fileSize)
 	if err = store.UploadData(fileId, progressReader, fileSize); err != nil {
+		return nil, err
+	}
+
+	// Encrypt hash
+	encryptedChecksum, err := crypto.EncryptBytesToString(hash.Sum(nil), key)
+	if err != nil {
 		return nil, err
 	}
 
 	// Store metadata
 	metadata := store.FileMetadata{
-		Name: *encryptedFileName,
-		Iv:   base64.StdEncoding.EncodeToString(fileCtx.Iv),
-		Size: fileSize,
+		Name:     *encryptedFileName,
+		Checksum: *encryptedChecksum,
+		Iv:       base64.StdEncoding.EncodeToString(fileCtx.Iv),
+		Size:     fileSize,
 	}
 
 	if err = store.WriteFileMetadata(fileId, metadata); err != nil {

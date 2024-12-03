@@ -65,13 +65,13 @@ func (ctx *EncryptionContext) EncryptBytes(data []byte) []byte {
 	return encrypted
 }
 
-// EncryptString encrypts the given string with a fresh encryption context and returns the encrypted value.
-func EncryptString(value string, key []byte) (*EncryptedValue, error) {
+// EncryptBytesToString encrypts the given data with a fresh encryption context and returns the encrypted value.
+func EncryptBytesToString(data []byte, key []byte) (*EncryptedValue, error) {
 	ctx, err := MakeAesCtrContext(key)
 	if err != nil {
 		return nil, err
 	}
-	encrypted := ctx.EncryptBytes([]byte(value))
+	encrypted := ctx.EncryptBytes(data)
 	return &EncryptedValue{
 		Value: base64.StdEncoding.EncodeToString(encrypted),
 		Iv:    base64.StdEncoding.EncodeToString(ctx.Iv),
