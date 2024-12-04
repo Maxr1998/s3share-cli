@@ -21,11 +21,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
 	"os"
 )
+
+const maxPartSize = int64(128 * 1024 * 1024) // 128 MB
 
 var client *s3.Client
 var defaultBucket string
@@ -53,12 +56,85 @@ func InitS3Client() {
 	defaultBucket = bucket
 }
 
+// UploadData uploads the data from the given reader to the configured S3 bucket.
 func UploadData(key string, reader io.Reader, fileSize int64) error {
+	if fileSize <= maxPartSize {
+		return uploadData(key, reader, fileSize)
+	} else {
+		return multipartUploadData(key, reader, fileSize)
+	}
+}
+
+func uploadData(key string, reader io.Reader, fileSize int64) error {
 	_, err := client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket:        &defaultBucket,
-		Key:           &key,
+		Bucket:        aws.String(defaultBucket),
+		Key:           aws.String(key),
 		Body:          reader,
-		ContentLength: &fileSize,
+		ContentLength: aws.Int64(fileSize),
 	})
 	return err
+}
+
+func multipartUploadData(key string, reader io.Reader, fileSize int64) error {
+	upload, err := client.CreateMultipartUpload(context.TODO(), &s3.CreateMultipartUploadInput{
+		Bucket: aws.String(defaultBucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return err
+	}
+
+	var partLength int64
+	var remaining = fileSize
+	var completedParts []types.CompletedPart
+	var partNumber int32 = 1
+
+	for remaining != 0 {
+		if remaining < maxPartSize {
+			partLength = remaining
+		} else {
+			partLength = maxPartSize
+		}
+
+		uploadPartResult, err := client.UploadPart(context.TODO(), &s3.UploadPartInput{
+			Bucket:        upload.Bucket,
+			Key:           upload.Key,
+			PartNumber:    aws.Int32(partNumber),
+			UploadId:      upload.UploadId,
+			Body:          io.LimitReader(reader, partLength),
+			ContentLength: aws.Int64(partLength),
+		})
+		if err != nil {
+			_, abortErr := client.AbortMultipartUpload(context.TODO(), &s3.AbortMultipartUploadInput{
+				Bucket:   upload.Bucket,
+				Key:      upload.Key,
+				UploadId: upload.UploadId,
+			})
+			if abortErr != nil {
+				return abortErr
+			}
+			return err
+		}
+
+		completedParts = append(completedParts, types.CompletedPart{
+			ETag:       uploadPartResult.ETag,
+			PartNumber: aws.Int32(partNumber),
+		})
+		remaining -= partLength
+		partNumber++
+	}
+
+	_, err = client.CompleteMultipartUpload(context.TODO(), &s3.CompleteMultipartUploadInput{
+		Bucket:   upload.Bucket,
+		Key:      upload.Key,
+		UploadId: upload.UploadId,
+		MultipartUpload: &types.CompletedMultipartUpload{
+			Parts: completedParts,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
