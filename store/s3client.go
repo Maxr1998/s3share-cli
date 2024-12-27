@@ -138,3 +138,19 @@ func multipartUploadData(key string, reader io.Reader, fileSize int64) error {
 
 	return nil
 }
+
+func ListDataObjects(ctx context.Context) (map[string]types.Object, error) {
+	listObjectResult, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket: aws.String(defaultBucket),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	objects := make(map[string]types.Object)
+	for _, object := range listObjectResult.Contents {
+		objects[*object.Key] = object
+	}
+
+	return objects, nil
+}

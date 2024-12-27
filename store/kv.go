@@ -6,6 +6,7 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/sync/errgroup"
 	"os"
 )
 
@@ -33,6 +34,23 @@ func InitKvClient() {
 	cfCtx = context.Background()
 }
 
+func ReadKvData(ctx context.Context, key string) ([]byte, error) {
+	return cfApi.GetWorkersKV(ctx, cfAccountId, cloudflare.GetWorkersKVParams{
+		NamespaceID: namespaceId,
+		Key:         key,
+	})
+}
+
+// ReadFileMetadata returns the metadata stored for a file with the given file ID.
+func ReadFileMetadata(ctx context.Context, fileId string) (FileMetadata, error) {
+	var metadata FileMetadata
+	metadataJson, err := ReadKvData(ctx, fileId)
+	if err == nil {
+		err = json.Unmarshal(metadataJson, &metadata)
+	}
+	return metadata, err
+}
+
 func WriteKvData(key string, value []byte) error {
 	_, err := cfApi.WriteWorkersKVEntry(cfCtx, cfAccountId, cloudflare.WriteWorkersKVEntryParams{
 		NamespaceID: namespaceId,
@@ -48,4 +66,55 @@ func WriteFileMetadata(fileId string, metadata FileMetadata) error {
 	} else {
 		return err
 	}
+}
+
+// ListKvKeys returns a list of all keys in the KV store.
+func ListKvKeys(ctx context.Context) ([]string, error) {
+	entries, err := cfApi.ListWorkersKVKeys(ctx, cfAccountId, cloudflare.ListWorkersKVsParams{
+		NamespaceID: namespaceId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make([]string, 0, len(entries.Result))
+	for _, entry := range entries.Result {
+		keys = append(keys, entry.Name)
+	}
+
+	return keys, nil
+}
+
+// ListFileMetadata returns a map with file IDs and their metadata.
+func ListFileMetadata(ctx context.Context) (map[string]FileMetadata, error) {
+	fileIds, err := ListKvKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(5)
+
+	// Collect metadata for each file
+	results := make([]FileMetadata, len(fileIds))
+	for i, fileId := range fileIds {
+		g.Go(func() error {
+			metadata, err := ReadFileMetadata(ctx, fileId)
+			if err == nil {
+				results[i] = metadata
+			}
+			return err
+		})
+	}
+	if err = g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Collect results
+	files := make(map[string]FileMetadata, len(fileIds))
+	for i, fileId := range fileIds {
+		files[fileId] = results[i]
+	}
+
+	return files, nil
 }
