@@ -48,8 +48,9 @@ var uploadCmd = &cobra.Command{
 		}
 
 		// Upload all files sequentially
+		ctx := cmd.Context()
 		for _, path := range paths {
-			uploadInfo, err := core.UploadFile(path, progressReaderProvider)
+			uploadInfo, err := core.UploadFile(ctx, path, progressReaderProvider)
 			cobra.CheckErr(err)
 
 			baseUrl := viper.GetString(conf.ServiceName + ".url")

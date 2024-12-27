@@ -44,7 +44,7 @@ func InitS3Client() {
 		os.Exit(1)
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
+	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKeyId, accessKeySecret, "")),
 		config.WithRegion("auto"),
 	)
@@ -57,16 +57,16 @@ func InitS3Client() {
 }
 
 // UploadData uploads the data from the given reader to the configured S3 bucket.
-func UploadData(key string, reader io.Reader, fileSize int64) error {
+func UploadData(ctx context.Context, key string, reader io.Reader, fileSize int64) error {
 	if fileSize <= maxPartSize {
-		return uploadData(key, reader, fileSize)
+		return uploadData(ctx, key, reader, fileSize)
 	} else {
-		return multipartUploadData(key, reader, fileSize)
+		return multipartUploadData(ctx, key, reader, fileSize)
 	}
 }
 
-func uploadData(key string, reader io.Reader, fileSize int64) error {
-	_, err := client.PutObject(context.TODO(), &s3.PutObjectInput{
+func uploadData(ctx context.Context, key string, reader io.Reader, fileSize int64) error {
+	_, err := client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(defaultBucket),
 		Key:           aws.String(key),
 		Body:          reader,
@@ -75,8 +75,8 @@ func uploadData(key string, reader io.Reader, fileSize int64) error {
 	return err
 }
 
-func multipartUploadData(key string, reader io.Reader, fileSize int64) error {
-	upload, err := client.CreateMultipartUpload(context.TODO(), &s3.CreateMultipartUploadInput{
+func multipartUploadData(ctx context.Context, key string, reader io.Reader, fileSize int64) error {
+	upload, err := client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: aws.String(defaultBucket),
 		Key:    aws.String(key),
 	})
@@ -96,7 +96,7 @@ func multipartUploadData(key string, reader io.Reader, fileSize int64) error {
 			partLength = maxPartSize
 		}
 
-		uploadPartResult, err := client.UploadPart(context.TODO(), &s3.UploadPartInput{
+		uploadPartResult, err := client.UploadPart(ctx, &s3.UploadPartInput{
 			Bucket:        upload.Bucket,
 			Key:           upload.Key,
 			PartNumber:    aws.Int32(partNumber),
@@ -105,7 +105,7 @@ func multipartUploadData(key string, reader io.Reader, fileSize int64) error {
 			ContentLength: aws.Int64(partLength),
 		})
 		if err != nil {
-			_, abortErr := client.AbortMultipartUpload(context.TODO(), &s3.AbortMultipartUploadInput{
+			_, abortErr := client.AbortMultipartUpload(ctx, &s3.AbortMultipartUploadInput{
 				Bucket:   upload.Bucket,
 				Key:      upload.Key,
 				UploadId: upload.UploadId,
@@ -124,7 +124,7 @@ func multipartUploadData(key string, reader io.Reader, fileSize int64) error {
 		partNumber++
 	}
 
-	_, err = client.CompleteMultipartUpload(context.TODO(), &s3.CompleteMultipartUploadInput{
+	_, err = client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
 		Bucket:   upload.Bucket,
 		Key:      upload.Key,
 		UploadId: upload.UploadId,

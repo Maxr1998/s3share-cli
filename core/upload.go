@@ -16,6 +16,7 @@
 package core
 
 import (
+	"context"
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/base64"
@@ -36,7 +37,7 @@ type UploadInfo struct {
 	Key      string
 }
 
-func UploadFile(path string, progressReaderProvider ProgressReaderProvider) (*UploadInfo, error) {
+func UploadFile(ctx context.Context, path string, progressReaderProvider ProgressReaderProvider) (*UploadInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -74,7 +75,7 @@ func UploadFile(path string, progressReaderProvider ProgressReaderProvider) (*Up
 
 	hash := md5.New()
 	progressReader := progressReaderProvider(fileCtx.Encrypt(io.TeeReader(file, hash)), fileName, fileSize)
-	if err = store.UploadData(fileId, progressReader, fileSize); err != nil {
+	if err = store.UploadData(ctx, fileId, progressReader, fileSize); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +93,7 @@ func UploadFile(path string, progressReaderProvider ProgressReaderProvider) (*Up
 		Size:     fileSize,
 	}
 
-	if err = store.WriteFileMetadata(fileId, metadata); err != nil {
+	if err = store.WriteFileMetadata(ctx, fileId, metadata); err != nil {
 		return nil, err
 	}
 

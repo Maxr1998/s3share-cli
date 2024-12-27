@@ -14,8 +14,6 @@ var cfAccountId *cloudflare.ResourceContainer
 var cfApi *cloudflare.API
 var namespaceId string
 
-var cfCtx context.Context
-
 func InitKvClient() {
 	var err error
 	accountId := viper.GetString("kv.account_id")
@@ -30,8 +28,6 @@ func InitKvClient() {
 	cfAccountId = cloudflare.AccountIdentifier(accountId)
 	cfApi, err = cloudflare.NewWithAPIToken(apiToken)
 	cobra.CheckErr(err)
-
-	cfCtx = context.Background()
 }
 
 func ReadKvData(ctx context.Context, key string) ([]byte, error) {
@@ -51,8 +47,8 @@ func ReadFileMetadata(ctx context.Context, fileId string) (FileMetadata, error) 
 	return metadata, err
 }
 
-func WriteKvData(key string, value []byte) error {
-	_, err := cfApi.WriteWorkersKVEntry(cfCtx, cfAccountId, cloudflare.WriteWorkersKVEntryParams{
+func WriteKvData(ctx context.Context, key string, value []byte) error {
+	_, err := cfApi.WriteWorkersKVEntry(ctx, cfAccountId, cloudflare.WriteWorkersKVEntryParams{
 		NamespaceID: namespaceId,
 		Key:         key,
 		Value:       value,
@@ -60,9 +56,9 @@ func WriteKvData(key string, value []byte) error {
 	return err
 }
 
-func WriteFileMetadata(fileId string, metadata FileMetadata) error {
+func WriteFileMetadata(ctx context.Context, fileId string, metadata FileMetadata) error {
 	if metadataJson, err := json.Marshal(metadata); err == nil {
-		return WriteKvData(fileId, metadataJson)
+		return WriteKvData(ctx, fileId, metadataJson)
 	} else {
 		return err
 	}
