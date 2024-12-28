@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/cloudflare/cloudflare-go"
+	"github.com/maxr1998/s3share-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
@@ -48,11 +49,14 @@ func ReadFileMetadata(ctx context.Context, fileId string) (FileMetadata, error) 
 }
 
 func WriteKvData(ctx context.Context, key string, value []byte) error {
-	_, err := cfApi.WriteWorkersKVEntry(ctx, cfAccountId, cloudflare.WriteWorkersKVEntryParams{
+	response, err := cfApi.WriteWorkersKVEntry(ctx, cfAccountId, cloudflare.WriteWorkersKVEntryParams{
 		NamespaceID: namespaceId,
 		Key:         key,
 		Value:       value,
 	})
+	if err == nil && !response.Success {
+		err = util.CollectResponseErrors(response)
+	}
 	return err
 }
 
