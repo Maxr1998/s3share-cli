@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/maxr1998/s3share-cli/conf"
 	"github.com/maxr1998/s3share-cli/core"
+	"github.com/maxr1998/s3share-cli/util"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -49,12 +50,16 @@ var uploadCmd = &cobra.Command{
 
 		// Upload all files sequentially
 		ctx := cmd.Context()
+		serviceHost := viper.GetString("service.host")
 		for _, path := range paths {
 			uploadInfo, err := core.UploadFile(ctx, path, progressReaderProvider)
 			cobra.CheckErr(err)
-
-			baseUrl := viper.GetString(conf.ServiceName + ".url")
-			fmt.Printf("Uploaded %s: %s/%s#%s\n", uploadInfo.FileName, baseUrl, uploadInfo.FileId, uploadInfo.Key)
+			url := util.ShareableUrl{
+				ServiceHost: serviceHost,
+				FileId:      uploadInfo.FileId,
+				Key:         uploadInfo.Key,
+			}
+			fmt.Printf("Uploaded %s: %v\n", uploadInfo.FileName, url)
 		}
 	},
 }

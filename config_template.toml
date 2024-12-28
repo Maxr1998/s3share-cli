@@ -1,5 +1,5 @@
-[s3share]
-url = ""
+[service]
+host = ""
 
 [upload]
 url = ""
