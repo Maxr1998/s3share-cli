@@ -139,6 +139,15 @@ func multipartUploadData(ctx context.Context, key string, reader io.Reader, file
 	return nil
 }
 
+// DeleteDataObject deletes the object with the given key from the configured S3 bucket.
+func DeleteDataObject(ctx context.Context, key string) error {
+	_, err := client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(defaultBucket),
+		Key:    aws.String(key),
+	})
+	return err
+}
+
 func ListDataObjects(ctx context.Context) (map[string]types.Object, error) {
 	listObjectResult, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 		Bucket: aws.String(defaultBucket),

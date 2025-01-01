@@ -68,6 +68,18 @@ func WriteFileMetadata(ctx context.Context, fileId string, metadata FileMetadata
 	}
 }
 
+// DeleteKvData deletes the KV data stored under the given key.
+func DeleteKvData(ctx context.Context, key string) error {
+	response, err := cfApi.DeleteWorkersKVEntry(ctx, cfAccountId, cloudflare.DeleteWorkersKVEntryParams{
+		NamespaceID: namespaceId,
+		Key:         key,
+	})
+	if err == nil && !response.Success {
+		err = util.CollectResponseErrors(response)
+	}
+	return err
+}
+
 // ListKvKeys returns a list of all keys in the KV store.
 func ListKvKeys(ctx context.Context) ([]string, error) {
 	entries, err := cfApi.ListWorkersKVKeys(ctx, cfAccountId, cloudflare.ListWorkersKVsParams{
