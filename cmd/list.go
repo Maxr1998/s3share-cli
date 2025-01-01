@@ -15,11 +15,11 @@ var listCmd = &cobra.Command{
 	Short: "List uploaded files",
 	Long:  `List all files that have been uploaded to ` + conf.ServiceName + `.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
 		if len(args) > 0 {
 			cobra.CheckErr(fmt.Errorf("unexpected argument: %s", strings.Join(args, " ")))
 		}
 
+		ctx := cmd.Context()
 		files, err := core.ListUploadedFiles(ctx)
 		cobra.CheckErr(err)
 
