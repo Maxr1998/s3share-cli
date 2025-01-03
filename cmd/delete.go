@@ -9,9 +9,10 @@ import (
 )
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete uploaded files",
-	Long:  `Delete a specified file from ` + conf.ServiceName + `.`,
+	Use:     "delete",
+	Short:   "Delete uploaded files",
+	Long:    `Delete a specified file from ` + conf.ServiceName + `.`,
+	GroupID: Management,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			cobra.CheckErr(fmt.Errorf("missing URL or file ID to delete"))

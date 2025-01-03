@@ -31,9 +31,10 @@ import (
 
 // uploadCmd implements the upload [file]… command
 var uploadCmd = &cobra.Command{
-	Use:   "upload [file]…",
-	Short: "Upload a file",
-	Long:  `Encrypts and uploads the specified file to ` + conf.ServiceName + `.`,
+	Use:     "upload [file]…",
+	Short:   "Upload a file",
+	Long:    `Encrypts and uploads the specified file to ` + conf.ServiceName + `.`,
+	GroupID: Management,
 	Run: func(cmd *cobra.Command, paths []string) {
 		if len(paths) < 1 {
 			cobra.CheckErr(fmt.Errorf("missing file[s] to upload"))

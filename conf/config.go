@@ -17,23 +17,24 @@ package conf
 
 import (
 	"errors"
+	"fmt"
 	"github.com/spf13/viper"
 	"os"
 )
 
-func InitConfig() {
+func InitConfig(failOnError bool) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
 	for _, location := range ConfigFileLocations {
 		viper.AddConfigPath(location)
 	}
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err := viper.ReadInConfig(); err != nil && failOnError {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if errors.As(err, &configFileNotFoundError) {
-			println("Config file not found. Please create a config file `config.toml` at one of the following locations:")
+			fmt.Fprintln(os.Stderr, "Config file not found. Please create a config file `config.toml` at one of the following locations:")
 			for _, location := range ConfigFileLocations {
-				println(" -", location)
+				fmt.Fprintln(os.Stderr, " -", location)
 			}
 			os.Exit(1)
 		}

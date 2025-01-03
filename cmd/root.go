@@ -18,23 +18,37 @@ package cmd
 import (
 	"github.com/maxr1998/s3share-cli/conf"
 	"github.com/maxr1998/s3share-cli/store"
-	"os"
-
 	"github.com/spf13/cobra"
+)
+
+// Command groups
+const (
+	Management = "management"
 )
 
 var rootCmd = &cobra.Command{
 	Use:   conf.AppName,
 	Short: "Share files via " + conf.ServiceName + ".",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		isManagement := cmd.GroupID == Management
+
+		conf.InitConfig(isManagement)
+		if isManagement {
+			store.InitS3Client()
+			store.InitKvClient()
+		}
+	},
 }
 
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
+	if err := rootCmd.Execute(); err != nil {
+		cobra.CheckErr(err)
 	}
 }
 
 func init() {
-	cobra.OnInitialize(conf.InitConfig, store.InitS3Client, store.InitKvClient)
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    Management,
+		Title: "Manage files (admin only)",
+	})
 }

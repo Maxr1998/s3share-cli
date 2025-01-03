@@ -11,9 +11,10 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List uploaded files",
-	Long:  `List all files that have been uploaded to ` + conf.ServiceName + `.`,
+	Use:     "list",
+	Short:   "List uploaded files",
+	Long:    `List all files that have been uploaded to ` + conf.ServiceName + `.`,
+	GroupID: Management,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 {
 			cobra.CheckErr(fmt.Errorf("unexpected argument: %s", strings.Join(args, " ")))
