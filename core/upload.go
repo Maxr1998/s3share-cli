@@ -18,18 +18,14 @@ package core
 import (
 	"context"
 	"crypto/md5"
-	"crypto/rand"
 	"encoding/base64"
-	"github.com/jxskiss/base62"
-	"github.com/maxr1998/s3share-cli/conf"
+	"fmt"
 	"github.com/maxr1998/s3share-cli/crypto"
 	"github.com/maxr1998/s3share-cli/store"
-	"github.com/spf13/cobra"
+	"github.com/maxr1998/s3share-cli/util"
 	"io"
 	"os"
 )
-
-type ProgressReaderProvider func(upstreamReader io.Reader, fileName string, fileSize int64) io.Reader
 
 type UploadInfo struct {
 	FileId   string
@@ -37,14 +33,14 @@ type UploadInfo struct {
 	Key      string
 }
 
-func UploadFile(ctx context.Context, path string, progressReaderProvider ProgressReaderProvider) (*UploadInfo, error) {
+func UploadFile(ctx context.Context, path string) (*UploadInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer closeFileOrExit(file)
+	defer util.CloseFileOrExit(file)
 
-	fileId, err := generateFileId()
+	fileId, err := util.GenerateFileId()
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +70,8 @@ func UploadFile(ctx context.Context, path string, progressReaderProvider Progres
 	}
 
 	hash := md5.New()
-	progressReader := progressReaderProvider(fileCtx.Encrypt(io.TeeReader(file, hash)), fileName, fileSize)
+	description := fmt.Sprintf("Uploading %s", fileName)
+	progressReader := util.NewProgressReaderProvider(fileCtx.Encrypt(io.TeeReader(file, hash)), description, fileSize)
 	if err = store.UploadData(ctx, fileId, progressReader, fileSize); err != nil {
 		return nil, err
 	}
@@ -102,20 +99,4 @@ func UploadFile(ctx context.Context, path string, progressReaderProvider Progres
 		FileName: fileName,
 		Key:      base64.RawURLEncoding.EncodeToString(key),
 	}, nil
-}
-
-func generateFileId() (string, error) {
-	fileIdBytes := make([]byte, conf.FileIdLength)
-	_, err := rand.Read(fileIdBytes)
-	if err != nil {
-		return "", err
-	}
-	return base62.EncodeToString(fileIdBytes), nil
-}
-
-func closeFileOrExit(file *os.File) {
-	err := file.Close()
-	if err != nil {
-		cobra.CheckErr(err)
-	}
 }

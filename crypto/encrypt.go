@@ -78,15 +78,6 @@ func EncryptBytesToString(data []byte, key []byte) (*EncryptedValue, error) {
 	}, nil
 }
 
-// GenerateAes256Key generates a random AES-256 key.
-func GenerateAes256Key() ([]byte, error) {
-	key := make([]byte, conf.KeyLength)
-	if _, err := rand.Read(key); err != nil {
-		return nil, err
-	}
-	return key, nil
-}
-
 // generateIv generates an IV to be used for AES-256 encryption.
 //
 // The part where the counter resides is left empty (zero).

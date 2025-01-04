@@ -21,12 +21,9 @@ import (
 	"github.com/maxr1998/s3share-cli/conf"
 	"github.com/maxr1998/s3share-cli/core"
 	"github.com/maxr1998/s3share-cli/util"
-	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
 	"os"
-	"time"
 )
 
 // uploadCmd implements the upload [file]… command
@@ -53,7 +50,7 @@ var uploadCmd = &cobra.Command{
 		ctx := cmd.Context()
 		serviceHost := viper.GetString("service.host")
 		for _, path := range paths {
-			uploadInfo, err := core.UploadFile(ctx, path, progressReaderProvider)
+			uploadInfo, err := core.UploadFile(ctx, path)
 			cobra.CheckErr(err)
 			url := util.ShareableUrl{
 				ServiceHost: serviceHost,
@@ -63,28 +60,6 @@ var uploadCmd = &cobra.Command{
 			fmt.Printf("Uploaded %s: %v\n", uploadInfo.FileName, url)
 		}
 	},
-}
-
-// progressReaderProvider wraps the provided upstreamReader and returns a new reader
-// that tracks the read process through a progress bar that is shown on screen.
-func progressReaderProvider(upstreamReader io.Reader, fileName string, fileSize int64) io.Reader {
-	desc := fmt.Sprintf("Uploading %s", fileName)
-	bar := progressbar.NewOptions64(
-		fileSize,
-		progressbar.OptionSetDescription(desc),
-		progressbar.OptionSetWriter(os.Stderr),
-		progressbar.OptionSetWidth(10),
-		progressbar.OptionFullWidth(),
-		progressbar.OptionShowCount(),
-		progressbar.OptionShowBytes(true),
-		progressbar.OptionShowTotalBytes(true),
-		progressbar.OptionThrottle(50*time.Millisecond),
-		progressbar.OptionSetPredictTime(true),
-		progressbar.OptionClearOnFinish(),
-		progressbar.OptionSetRenderBlankState(true),
-	)
-	progressReader := progressbar.NewReader(upstreamReader, bar)
-	return &progressReader
 }
 
 func init() {
