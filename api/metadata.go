@@ -9,9 +9,9 @@ import (
 )
 
 type Response struct {
-	FileId   string             `json:"file_id"`
-	Metadata store.FileMetadata `json:"metadata"`
-	Url      string             `json:"url"`
+	FileId      string             `json:"file_id"`
+	Metadata    store.FileMetadata `json:"metadata"`
+	DownloadUrl string             `json:"url"`
 }
 
 func GetFileMetadata(url util.ShareableUrl) (*Response, error) {

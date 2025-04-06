@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
-	"encoding/base64"
 	"fmt"
 	"github.com/maxr1998/s3share-cli/api"
 	"github.com/maxr1998/s3share-cli/crypto"
@@ -15,43 +14,28 @@ import (
 )
 
 func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
-	// Decode key
-	key, err := base64.RawURLEncoding.DecodeString(url.Key)
-	if err != nil {
-		return "", err
-	}
-
 	// Get file metadata
 	apiResponse, err := api.GetFileMetadata(url)
 	if err != nil {
 		return "", err
 	}
-	fileNameBytes, err := crypto.DecryptValue(apiResponse.Metadata.Name, key)
+	metadata, err := apiResponse.Metadata.Decrypt(url.Key)
 	if err != nil {
 		return "", err
 	}
-	fileName := string(fileNameBytes)
-	checksum, err := crypto.DecryptValue(apiResponse.Metadata.Checksum, key)
-	if err != nil {
-		return "", err
-	}
-	iv, err := base64.StdEncoding.DecodeString(apiResponse.Metadata.Iv)
-	if err != nil {
-		return "", err
-	}
-	fileCtx, err := crypto.MakeAesCtrDecryptionContext(key, iv)
+	fileCtx, err := crypto.MakeAesCtrDecryptionContext(metadata.Key, metadata.Iv)
 	if err != nil {
 		return "", err
 	}
 
 	// Download file
-	resp, err := httpGetWithContext(ctx, apiResponse.Url)
+	resp, err := httpGetWithContext(ctx, apiResponse.DownloadUrl)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	outputFile, err := CreateOutputFile(fileName)
+	outputFile, err := CreateOutputFile(metadata.Name)
 	if err != nil {
 		return "", err
 	}
@@ -59,14 +43,14 @@ func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
 
 	hash := md5.New()
 	decryptedReader := io.TeeReader(fileCtx.Decrypt(resp.Body), hash)
-	description := fmt.Sprintf("Downloading %s", fileName)
-	progressReader := util.NewProgressReaderProvider(decryptedReader, description, apiResponse.Metadata.Size)
+	description := fmt.Sprintf("Downloading %s", metadata.Name)
+	progressReader := util.NewProgressReaderProvider(decryptedReader, description, metadata.Size)
 	if _, err = io.Copy(outputFile, progressReader); err != nil {
 		return "", err
 	}
 
 	// Verify checksum
-	if !bytes.Equal(hash.Sum(nil), checksum) {
+	if !bytes.Equal(hash.Sum(nil), metadata.Checksum) {
 		return "", fmt.Errorf("checksum mismatch")
 	}
 
