@@ -29,7 +29,9 @@ var listCmd = &cobra.Command{
 		tableWriter.SuppressEmptyColumns()
 
 		tableWriter.AppendHeader(table.Row{"File ID", "Size", "Last Modified", "Warnings"})
+		totalSize := int64(0)
 		for _, file := range files {
+			totalSize += file.Metadata.Size
 			var lastModified string
 			if file.Exists {
 				lastModified = humanize.Time(file.LastModified)
@@ -44,11 +46,11 @@ var listCmd = &cobra.Command{
 			if !file.Exists {
 				row = append(row, "Missing data")
 			} else if file.Metadata.Size != file.ObjectSize {
-				row = append(row, "Size mismatch, data may be corrupted")
+				row = append(row, "Size mismatch, data may be corrupt")
 			}
 			tableWriter.AppendRow(row)
 		}
-
+		tableWriter.AppendFooter(table.Row{"TOTAL", humanize.IBytes(uint64(totalSize)), "N/A"})
 		tableWriter.Render()
 	},
 }
