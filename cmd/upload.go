@@ -58,6 +58,9 @@ var uploadCmd = &cobra.Command{
 				Key:         uploadInfo.Key,
 			}
 			fmt.Printf("Uploaded %s: %v\n", uploadInfo.FileName, url)
+			if viper.GetBool("settings.keep_history") {
+				util.AddToHistory(url)
+			}
 		}
 	},
 }

@@ -35,3 +35,5 @@ var ConfigFileLocations = []string{
 	path.Join("$HOME", "."+ServiceName),
 	".",
 }
+
+var HistoryFileLocation = path.Join(xdg.ConfigHome, ServiceName, "history")
