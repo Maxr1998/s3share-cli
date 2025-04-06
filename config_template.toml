@@ -6,3 +6,8 @@ url = ""
 bucket = ""
 access_key = ""
 secret_key = ""
+
+[kv]
+account_id = ""
+api_token = ""
+namespace_id = ""
