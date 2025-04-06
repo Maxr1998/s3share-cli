@@ -15,7 +15,11 @@
 
 package conf
 
-import "crypto/aes"
+import (
+	"crypto/aes"
+	"github.com/adrg/xdg"
+	"path"
+)
 
 const (
 	ServiceName  = "s3share"
@@ -27,8 +31,7 @@ const (
 )
 
 var ConfigFileLocations = []string{
-	"$XDG_CONFIG_HOME/" + ServiceName,
-	"$HOME/.config/" + ServiceName,
-	"$HOME/." + ServiceName,
+	path.Join(xdg.ConfigHome, ServiceName),
+	path.Join("$HOME", "."+ServiceName),
 	".",
 }

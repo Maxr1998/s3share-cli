@@ -3,6 +3,7 @@ module github.com/maxr1998/s3share-cli
 go 1.23.0
 
 require (
+	github.com/adrg/xdg v0.5.3
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.13
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.66
