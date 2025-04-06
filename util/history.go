@@ -9,7 +9,7 @@ import (
 )
 
 func AddToHistory(url ShareableUrl) {
-	historyFile, err := os.OpenFile(conf.HistoryFileLocation, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	historyFile, err := os.OpenFile(conf.HistoryFileLocation, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		return
 	}
