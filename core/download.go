@@ -46,6 +46,7 @@ func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
 	description := fmt.Sprintf("Downloading %s", metadata.Name)
 	progressReader := util.NewProgressReaderProvider(decryptedReader, description, metadata.Size)
 	if written, err := io.Copy(outputFile, progressReader); err != nil || written != metadata.Size {
+		defer func(name string) { _ = os.Rename(name, name+".incomplete") }(outputFile.Name())
 		return "", fmt.Errorf("download failed")
 	}
 
