@@ -45,8 +45,8 @@ func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
 	decryptedReader := io.TeeReader(fileCtx.Decrypt(resp.Body), hash)
 	description := fmt.Sprintf("Downloading %s", metadata.Name)
 	progressReader := util.NewProgressReaderProvider(decryptedReader, description, metadata.Size)
-	if _, err = io.Copy(outputFile, progressReader); err != nil {
-		return "", err
+	if written, err := io.Copy(outputFile, progressReader); err != nil || written != metadata.Size {
+		return "", fmt.Errorf("download failed")
 	}
 
 	// Verify checksum
