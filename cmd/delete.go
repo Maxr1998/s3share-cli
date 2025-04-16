@@ -18,12 +18,18 @@ var deleteCmd = &cobra.Command{
 			cobra.CheckErr(fmt.Errorf("missing URL or file ID to delete"))
 		}
 
-		url, err := util.ParseUrl(args[0])
-		cobra.CheckErr(err)
+		var urls = make([]*util.ShareableUrl, 0, len(args))
+		for _, arg := range args {
+			url, err := util.ParseUrl(arg)
+			cobra.CheckErr(err)
+			urls = append(urls, url)
+		}
 
 		ctx := cmd.Context()
-		err = core.DeleteFile(ctx, url.FileId)
-		cobra.CheckErr(err)
+		for _, url := range urls {
+			err := core.DeleteFile(ctx, url.FileId)
+			cobra.CheckErr(err)
+		}
 	},
 }
 
