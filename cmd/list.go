@@ -5,14 +5,17 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/mattn/go-isatty"
 	"github.com/maxr1998/s3share-cli/conf"
 	"github.com/maxr1998/s3share-cli/core"
 	"github.com/maxr1998/s3share-cli/store"
 	"github.com/maxr1998/s3share-cli/util"
 	"github.com/spf13/cobra"
+	"os"
 	"strings"
 )
 
+var isATerminal = isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
 var warningColor = text.Colors{text.Bold, text.FgRed}
 
 var listCmd = &cobra.Command{
@@ -32,6 +35,13 @@ var listCmd = &cobra.Command{
 
 		tableWriter := table.NewWriter()
 		tableWriter.SetOutputMirror(cmd.OutOrStdout())
+		if isATerminal {
+			table.StyleLight.Format.Footer = text.FormatDefault
+			tableWriter.SetStyle(table.StyleLight)
+		} else {
+			table.StyleDefault.Format.Footer = text.FormatDefault
+			tableWriter.SetStyle(table.StyleDefault)
+		}
 		tableWriter.SuppressEmptyColumns()
 
 		tableWriter.AppendHeader(table.Row{"File ID", "Name", "Size", "Checksum", "Last Modified", "Warnings"})
@@ -51,8 +61,6 @@ var listCmd = &cobra.Command{
 			var checksum string
 			if decryptedMetadata.Checksum != nil {
 				checksum = fmt.Sprintf("%x", decryptedMetadata.Checksum)
-			} else {
-				checksum = ""
 			}
 			var lastModified string
 			if file.Exists {
@@ -78,7 +86,13 @@ var listCmd = &cobra.Command{
 
 			tableWriter.AppendRow(row)
 		}
-		tableWriter.AppendFooter(table.Row{"TOTAL", "", humanize.IBytes(uint64(totalSize)), "N/A", "N/A"})
+
+		totalNumFiles := fmt.Sprintf("Total %d files", len(files))
+		totalSizeStr := humanize.IBytes(uint64(totalSize))
+		tableWriter.AppendFooter(
+			table.Row{totalNumFiles, "", totalSizeStr, "", ""},
+			table.RowConfig{AutoMerge: true},
+		)
 		tableWriter.Render()
 	},
 }
