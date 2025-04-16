@@ -51,12 +51,17 @@ var listCmd = &cobra.Command{
 			var decryptedMetadata = &store.DecryptedMetadata{
 				Size: file.Metadata.Size,
 			}
-			if historyUrl := history[file.FileId]; historyUrl != nil {
+			var historyUrl *util.ShareableUrl = nil
+			if historyUrl = history[file.FileId]; historyUrl != nil {
 				if metadata, err := file.Metadata.Decrypt(history[file.FileId].Key); err == nil {
 					decryptedMetadata = metadata
 				}
 			}
 
+			fileId := file.FileId
+			if historyUrl != nil && isATerminal {
+				fileId = text.Hyperlink(historyUrl.String(), fileId)
+			}
 			totalSize += decryptedMetadata.Size
 			var checksum string
 			if decryptedMetadata.Checksum != nil {
@@ -76,7 +81,7 @@ var listCmd = &cobra.Command{
 			}
 
 			row := table.Row{
-				file.FileId,
+				fileId,
 				decryptedMetadata.Name,
 				humanize.IBytes(uint64(decryptedMetadata.Size)),
 				checksum,
