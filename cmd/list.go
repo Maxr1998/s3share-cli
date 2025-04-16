@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/maxr1998/s3share-cli/conf"
 	"github.com/maxr1998/s3share-cli/core"
 	"github.com/maxr1998/s3share-cli/store"
@@ -11,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	"strings"
 )
+
+var warningColor = text.Colors{text.Bold, text.FgRed}
 
 var listCmd = &cobra.Command{
 	Use:     "list",
@@ -59,9 +62,9 @@ var listCmd = &cobra.Command{
 			}
 			var warning string
 			if !file.Exists {
-				warning = "Missing data"
+				warning = warningColor.Sprint("Missing data")
 			} else if decryptedMetadata.Size != file.ObjectSize {
-				warning = "Size mismatch, data may be corrupt"
+				warning = warningColor.Sprint("Size mismatch, data may be corrupt")
 			}
 
 			row := table.Row{
