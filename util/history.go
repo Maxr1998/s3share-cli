@@ -51,4 +51,5 @@ func WriteHistory(urls []*ShareableUrl) {
 	for _, url := range urls {
 		_, _ = fmt.Fprintf(writer, "%v\n", url)
 	}
+	_ = writer.Flush()
 }
