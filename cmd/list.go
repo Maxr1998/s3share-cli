@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/dustin/go-humanize"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
@@ -11,8 +14,6 @@ import (
 	"github.com/maxr1998/s3share-cli/store"
 	"github.com/maxr1998/s3share-cli/util"
 	"github.com/spf13/cobra"
-	"os"
-	"strings"
 )
 
 var isATerminal = isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
@@ -32,6 +33,7 @@ var listCmd = &cobra.Command{
 		files, err := core.ListUploadedFiles(ctx)
 		cobra.CheckErr(err)
 		history := util.ReadHistory()
+		availableHistory := make([]*util.ShareableUrl, 0, len(history))
 
 		tableWriter := table.NewWriter()
 		tableWriter.SetOutputMirror(cmd.OutOrStdout())
@@ -53,6 +55,7 @@ var listCmd = &cobra.Command{
 			}
 			var historyUrl *util.ShareableUrl = nil
 			if historyUrl = history[file.FileId]; historyUrl != nil {
+				availableHistory = append(availableHistory, historyUrl)
 				if metadata, err := file.Metadata.Decrypt(history[file.FileId].Key); err == nil {
 					decryptedMetadata = metadata
 				}
@@ -99,6 +102,8 @@ var listCmd = &cobra.Command{
 			table.RowConfig{AutoMerge: true},
 		)
 		tableWriter.Render()
+
+		util.WriteHistory(availableHistory)
 	},
 }
 
