@@ -17,6 +17,9 @@ package store
 
 import (
 	"context"
+	"io"
+	"os"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -24,8 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
-	"os"
 )
 
 const maxPartSize = int64(128 * 1024 * 1024) // 128 MB
@@ -52,6 +53,7 @@ func InitS3Client() {
 
 	client = s3.NewFromConfig(cfg, func(options *s3.Options) {
 		options.BaseEndpoint = aws.String(uploadUrl)
+		options.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
 	})
 	defaultBucket = bucket
 }
