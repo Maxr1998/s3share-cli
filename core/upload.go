@@ -27,6 +27,7 @@ import (
 	"github.com/maxr1998/s3share-cli/crypto"
 	"github.com/maxr1998/s3share-cli/store"
 	"github.com/maxr1998/s3share-cli/util"
+	"github.com/zeebo/blake3"
 )
 
 type UploadInfo struct {
@@ -72,7 +73,8 @@ func UploadFile(ctx context.Context, path string) (*UploadInfo, error) {
 	}
 
 	hashers := map[string]hash.Hash{
-		"MD5": md5.New(),
+		"BLAKE3": blake3.New(),
+		"MD5":    md5.New(),
 	}
 	// Go slices aren't covariant…
 	hashWriters := make([]io.Writer, 0, len(hashers))

@@ -13,6 +13,7 @@ import (
 	"github.com/maxr1998/s3share-cli/api"
 	"github.com/maxr1998/s3share-cli/crypto"
 	"github.com/maxr1998/s3share-cli/util"
+	"github.com/zeebo/blake3"
 )
 
 func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
@@ -47,6 +48,8 @@ func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
 	var expectedChecksum []byte
 	for algorithm, checksum := range metadata.Checksums {
 		switch algorithm {
+		case "BLAKE3":
+			hasher = blake3.New()
 		case "MD5":
 			hasher = md5.New()
 		default:
