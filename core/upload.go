@@ -20,11 +20,13 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"fmt"
+	"hash"
+	"io"
+	"os"
+
 	"github.com/maxr1998/s3share-cli/crypto"
 	"github.com/maxr1998/s3share-cli/store"
 	"github.com/maxr1998/s3share-cli/util"
-	"io"
-	"os"
 )
 
 type UploadInfo struct {
@@ -69,25 +71,37 @@ func UploadFile(ctx context.Context, path string) (*UploadInfo, error) {
 		return nil, err
 	}
 
-	hash := md5.New()
+	hashers := map[string]hash.Hash{
+		"MD5": md5.New(),
+	}
+	// Go slices aren't covariant…
+	hashWriters := make([]io.Writer, 0, len(hashers))
+	for _, hasher := range hashers {
+		hashWriters = append(hashWriters, hasher)
+	}
 	description := fmt.Sprintf("Uploading %s", fileName)
-	progressReader := util.NewProgressReaderProvider(fileCtx.Encrypt(io.TeeReader(file, hash)), description, fileSize)
+	progressReader := util.NewProgressReaderProvider(fileCtx.Encrypt(io.TeeReader(file, io.MultiWriter(hashWriters...))), description, fileSize)
 	if err = store.UploadData(ctx, fileId, progressReader, fileSize); err != nil {
 		return nil, err
 	}
 
-	// Encrypt hash
-	encryptedChecksum, err := crypto.EncryptBytesToString(hash.Sum(nil), key)
-	if err != nil {
-		return nil, err
+	// Encrypt checksums
+	encryptedChecksums := make(map[string]crypto.EncryptedValue, len(hashers))
+	for algorithm, hasher := range hashers {
+		hasher.Sum(nil)
+		encryptedChecksum, err := crypto.EncryptBytesToString(hasher.Sum(nil), key)
+		if err != nil {
+			return nil, err
+		}
+		encryptedChecksums[algorithm] = *encryptedChecksum
 	}
 
 	// Store metadata
 	metadata := store.FileMetadata{
-		Name:     *encryptedFileName,
-		Checksum: *encryptedChecksum,
-		Iv:       base64.StdEncoding.EncodeToString(fileCtx.Iv),
-		Size:     fileSize,
+		Name:      *encryptedFileName,
+		Checksums: encryptedChecksums,
+		Iv:        base64.StdEncoding.EncodeToString(fileCtx.Iv),
+		Size:      fileSize,
 	}
 
 	if err = store.WriteFileMetadata(ctx, fileId, metadata); err != nil {

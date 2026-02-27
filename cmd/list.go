@@ -67,8 +67,8 @@ var listCmd = &cobra.Command{
 			}
 			totalSize += decryptedMetadata.Size
 			var checksum string
-			if decryptedMetadata.Checksum != nil {
-				checksum = fmt.Sprintf("%x", decryptedMetadata.Checksum)
+			if checksumBytes, found := decryptedMetadata.Checksums["MD5"]; found {
+				checksum = fmt.Sprintf("%x", checksumBytes)
 			}
 			var lastModified string
 			if file.Exists {

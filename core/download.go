@@ -5,12 +5,14 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"github.com/maxr1998/s3share-cli/api"
-	"github.com/maxr1998/s3share-cli/crypto"
-	"github.com/maxr1998/s3share-cli/util"
+	"hash"
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/maxr1998/s3share-cli/api"
+	"github.com/maxr1998/s3share-cli/crypto"
+	"github.com/maxr1998/s3share-cli/util"
 )
 
 func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
@@ -41,8 +43,23 @@ func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
 	}
 	defer util.CloseFileOrExit(outputFile)
 
-	hash := md5.New()
-	decryptedReader := io.TeeReader(fileCtx.Decrypt(resp.Body), hash)
+	var hasher hash.Hash
+	var expectedChecksum []byte
+	for algorithm, checksum := range metadata.Checksums {
+		switch algorithm {
+		case "MD5":
+			hasher = md5.New()
+		default:
+			continue
+		}
+		expectedChecksum = checksum
+		break
+	}
+	if hasher == nil {
+		return "", fmt.Errorf("no supported checksum found")
+	}
+
+	decryptedReader := io.TeeReader(fileCtx.Decrypt(resp.Body), hasher)
 	description := fmt.Sprintf("Downloading %s", metadata.Name)
 	progressReader := util.NewProgressReaderProvider(decryptedReader, description, metadata.Size)
 	if written, err := io.Copy(outputFile, progressReader); err != nil || written != metadata.Size {
@@ -51,7 +68,7 @@ func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
 	}
 
 	// Verify checksum
-	if !bytes.Equal(hash.Sum(nil), metadata.Checksum) {
+	if !bytes.Equal(hasher.Sum(nil), expectedChecksum) {
 		return "", fmt.Errorf("checksum mismatch")
 	}
 
