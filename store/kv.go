@@ -14,15 +14,16 @@ import (
 
 var cfAccountId *cloudflare.ResourceContainer
 var cfApi *cloudflare.API
-var namespaceId string
+var metadataNamespaceId string
+var uploadSessionsNamespaceId string
 
 func InitKvClient() {
 	var err error
 	accountId := viper.GetString("kv.account_id")
 	apiToken := viper.GetString("kv.api_token")
-	namespaceId = viper.GetString("kv.namespace_id")
+	metadataNamespaceId = viper.GetString("kv.namespace_id")
 
-	if accountId == "" || apiToken == "" || namespaceId == "" {
+	if accountId == "" || apiToken == "" || metadataNamespaceId == "" {
 		println("Missing configuration. Please make sure to set the account ID, API token and namespace ID in your configuration file.")
 		os.Exit(1)
 	}
@@ -32,24 +33,24 @@ func InitKvClient() {
 	cobra.CheckErr(err)
 }
 
-func ReadKvData(ctx context.Context, key string) ([]byte, error) {
+func InitUploadSessionsNamespaceId() {
+	uploadSessionsNamespaceId = viper.GetString("kv.upload_sessions_namespace_id")
+	if uploadSessionsNamespaceId == "" {
+		println("Missing configuration. Please make sure to set the upload sessions namespace ID in your configuration file.")
+		os.Exit(1)
+	}
+}
+
+// ReadKvData reads the value stored under the given key from the KV store.
+func ReadKvData(ctx context.Context, namespaceId string, key string) ([]byte, error) {
 	return cfApi.GetWorkersKV(ctx, cfAccountId, cloudflare.GetWorkersKVParams{
 		NamespaceID: namespaceId,
 		Key:         key,
 	})
 }
 
-// ReadFileMetadata returns the metadata stored for a file with the given file ID.
-func ReadFileMetadata(ctx context.Context, fileId string) (FileMetadata, error) {
-	var metadata FileMetadata
-	metadataJson, err := ReadKvData(ctx, fileId)
-	if err == nil {
-		err = json.Unmarshal(metadataJson, &metadata)
-	}
-	return metadata, err
-}
-
-func WriteKvData(ctx context.Context, key string, value []byte) error {
+// WriteKvData writes the given value to the KV store under the given key.
+func WriteKvData(ctx context.Context, namespaceId string, key string, value []byte) error {
 	response, err := cfApi.WriteWorkersKVEntry(ctx, cfAccountId, cloudflare.WriteWorkersKVEntryParams{
 		NamespaceID: namespaceId,
 		Key:         key,
@@ -61,16 +62,8 @@ func WriteKvData(ctx context.Context, key string, value []byte) error {
 	return err
 }
 
-func WriteFileMetadata(ctx context.Context, fileId string, metadata FileMetadata) error {
-	if metadataJson, err := json.Marshal(metadata); err == nil {
-		return WriteKvData(ctx, fileId, metadataJson)
-	} else {
-		return err
-	}
-}
-
 // DeleteKvData deletes the KV data stored under the given key.
-func DeleteKvData(ctx context.Context, key string) error {
+func DeleteKvData(ctx context.Context, namespaceId string, key string) error {
 	response, err := cfApi.DeleteWorkersKVEntry(ctx, cfAccountId, cloudflare.DeleteWorkersKVEntryParams{
 		NamespaceID: namespaceId,
 		Key:         key,
@@ -82,7 +75,7 @@ func DeleteKvData(ctx context.Context, key string) error {
 }
 
 // ListKvKeys returns a list of all keys in the KV store.
-func ListKvKeys(ctx context.Context) ([]string, error) {
+func ListKvKeys(ctx context.Context, namespaceId string) ([]string, error) {
 	entries, err := cfApi.ListWorkersKVKeys(ctx, cfAccountId, cloudflare.ListWorkersKVsParams{
 		NamespaceID: namespaceId,
 	})
@@ -98,9 +91,37 @@ func ListKvKeys(ctx context.Context) ([]string, error) {
 	return keys, nil
 }
 
+// HasFileMetadata checks if a file with the given file ID exists in the KV store.
+func HasFileMetadata(ctx context.Context, fileId string) bool {
+	_, err := ReadKvData(ctx, metadataNamespaceId, fileId)
+	return err == nil
+}
+
+// ReadFileMetadata returns the metadata stored for a file with the given file ID.
+func ReadFileMetadata(ctx context.Context, fileId string) (FileMetadata, error) {
+	var metadata FileMetadata
+	metadataJson, err := ReadKvData(ctx, metadataNamespaceId, fileId)
+	if err == nil {
+		err = json.Unmarshal(metadataJson, &metadata)
+	}
+	return metadata, err
+}
+
+func WriteFileMetadata(ctx context.Context, fileId string, metadata FileMetadata) error {
+	if metadataJson, err := json.Marshal(metadata); err == nil {
+		return WriteKvData(ctx, metadataNamespaceId, fileId, metadataJson)
+	} else {
+		return err
+	}
+}
+
+func DeleteFileMetadata(ctx context.Context, fileId string) error {
+	return DeleteKvData(ctx, metadataNamespaceId, fileId)
+}
+
 // ListFileMetadata returns a map with file IDs and their metadata.
 func ListFileMetadata(ctx context.Context) (map[string]FileMetadata, error) {
-	fileIds, err := ListKvKeys(ctx)
+	fileIds, err := ListKvKeys(ctx, metadataNamespaceId)
 	if err != nil {
 		return nil, err
 	}
@@ -130,4 +151,9 @@ func ListFileMetadata(ctx context.Context) (map[string]FileMetadata, error) {
 	}
 
 	return files, nil
+}
+
+// CreateUploadSession creates a new pending upload session for the given token in the sessions KV namespace.
+func CreateUploadSession(ctx context.Context, token string) error {
+	return WriteKvData(ctx, uploadSessionsNamespaceId, token, []byte(`{"state":"PENDING"}`))
 }

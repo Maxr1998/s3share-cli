@@ -18,6 +18,15 @@ func GenerateFileId() (string, error) {
 	return base62.EncodeToString(fileIdBytes), nil
 }
 
+func GenerateUploadToken() (string, error) {
+	tokenBytes := make([]byte, conf.UploadTokenLength)
+	_, err := rand.Read(tokenBytes)
+	if err != nil {
+		return "", err
+	}
+	return base62.EncodeToString(tokenBytes), nil
+}
+
 func CloseFileOrExit(file *os.File) {
 	err := file.Close()
 	if err != nil {

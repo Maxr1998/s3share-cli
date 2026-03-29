@@ -11,6 +11,7 @@ secret_key = ""
 account_id = ""
 api_token = ""
 namespace_id = ""
+upload_sessions_namespace_id = ""
 
 [settings]
 keep_history = false

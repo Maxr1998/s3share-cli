@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 	Use:   conf.AppName,
 	Short: "Share files via " + conf.ServiceName + ".",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		isManagement := cmd.GroupID == Management
+		isManagement := cmd.GroupID == Management || cmd.Parent().GroupID == Management
 
 		conf.InitConfig(isManagement)
 		if isManagement {

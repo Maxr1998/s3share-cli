@@ -23,12 +23,13 @@ import (
 )
 
 const (
-	ServiceName  = "s3share"
-	AppName      = ServiceName + "-cli"
-	FileIdLength = 10            // 80 bits
-	KeyLength    = 32            // AES-256
-	IvLength     = aes.BlockSize // 16 bytes
-	IvSize       = 8             // actual IV size (8 bytes) for AES-CTR without the counter
+	ServiceName       = "s3share"
+	AppName           = ServiceName + "-cli"
+	FileIdLength      = 10            // 80 bits
+	UploadTokenLength = 16            // 128 bits
+	KeyLength         = 32            // AES-256
+	IvLength          = aes.BlockSize // 16 bytes
+	IvSize            = 8             // actual IV size (8 bytes) for AES-CTR without the counter
 )
 
 var ConfigFileLocations = []string{
