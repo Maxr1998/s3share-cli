@@ -18,6 +18,7 @@ package core
 import (
 	"context"
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"hash"
@@ -74,6 +75,7 @@ func UploadFile(ctx context.Context, path string) (*UploadInfo, error) {
 
 	hashers := map[string]hash.Hash{
 		"BLAKE3": blake3.New(),
+		"SHA256": sha256.New(),
 		"MD5":    md5.New(),
 	}
 	// Go slices aren't covariant…

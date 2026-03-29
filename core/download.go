@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"hash"
 	"io"
@@ -50,6 +51,8 @@ func DownloadFile(ctx context.Context, url util.ShareableUrl) (string, error) {
 		switch algorithm {
 		case "BLAKE3":
 			hasher = blake3.New()
+		case "SHA256":
+			hasher = sha256.New()
 		case "MD5":
 			hasher = md5.New()
 		default:
