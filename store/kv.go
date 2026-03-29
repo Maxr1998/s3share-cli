@@ -157,3 +157,47 @@ func ListFileMetadata(ctx context.Context) (map[string]FileMetadata, error) {
 func CreateUploadSession(ctx context.Context, token string) error {
 	return WriteKvData(ctx, uploadSessionsNamespaceId, token, []byte(`{"state":"PENDING"}`))
 }
+
+func GetUploadSession(ctx context.Context, token string) (UploadSession, error) {
+	var session UploadSession
+	sessionJson, err := ReadKvData(ctx, uploadSessionsNamespaceId, token)
+	if err == nil {
+		err = json.Unmarshal(sessionJson, &session)
+	}
+	return session, err
+}
+
+// ListUploadSessions returns a list of all current upload sessions. TODO: deduplicate with ListFileMetadata
+func ListUploadSessions(ctx context.Context) (map[string]UploadSession, error) {
+	uploadTokens, err := ListKvKeys(ctx, uploadSessionsNamespaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(5)
+
+	// Collect all upload sessions
+	results := make([]UploadSession, len(uploadTokens))
+	for i, fileId := range uploadTokens {
+		g.Go(func() error {
+			session, err := GetUploadSession(ctx, fileId)
+			if err == nil {
+				results[i] = session
+			}
+			return err
+		})
+	}
+
+	if err = g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Collect results
+	sessions := make(map[string]UploadSession, len(uploadTokens))
+	for i, fileId := range uploadTokens {
+		sessions[fileId] = results[i]
+	}
+
+	return sessions, nil
+}

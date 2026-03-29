@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"github.com/maxr1998/s3share-cli/crypto"
 	"github.com/maxr1998/s3share-cli/store"
@@ -39,7 +40,26 @@ var uploadSessionCreateCmd = &cobra.Command{
 	},
 }
 
+var uploadSessionsListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all upload sessions",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			cobra.CheckErr(fmt.Errorf("unexpected argument: %s", strings.Join(args, " ")))
+		}
+
+		store.InitUploadSessionsNamespaceId()
+
+		ctx := cmd.Context()
+		sessions, err := store.ListUploadSessions(ctx)
+		cobra.CheckErr(err)
+
+		fmt.Println(sessions)
+	},
+}
+
 func init() {
 	uploadSessionCmd.AddCommand(uploadSessionCreateCmd)
+	uploadSessionCmd.AddCommand(uploadSessionsListCmd)
 	rootCmd.AddCommand(uploadSessionCmd)
 }
