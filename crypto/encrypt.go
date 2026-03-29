@@ -20,8 +20,9 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"github.com/maxr1998/s3share-cli/conf"
 	"io"
+
+	"github.com/maxr1998/s3share-cli/conf"
 )
 
 type EncryptionContext struct {

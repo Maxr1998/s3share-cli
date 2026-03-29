@@ -2,9 +2,10 @@ package core
 
 import (
 	"context"
-	"github.com/maxr1998/s3share-cli/store"
 	"slices"
 	"time"
+
+	"github.com/maxr1998/s3share-cli/store"
 )
 
 type UploadedFileMetadata struct {

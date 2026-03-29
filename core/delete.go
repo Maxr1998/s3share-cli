@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+
 	"github.com/maxr1998/s3share-cli/store"
 )
 

@@ -2,10 +2,11 @@ package util
 
 import (
 	"crypto/rand"
+	"os"
+
 	"github.com/jxskiss/base62"
 	"github.com/maxr1998/s3share-cli/conf"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func GenerateFileId() (string, error) {

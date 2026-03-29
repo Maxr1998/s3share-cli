@@ -2,9 +2,10 @@ package util
 
 import (
 	"errors"
-	"github.com/spf13/viper"
 	"net/url"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type ShareableUrl struct {

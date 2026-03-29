@@ -17,8 +17,9 @@ package conf
 
 import (
 	"crypto/aes"
-	"github.com/adrg/xdg"
 	"path"
+
+	"github.com/adrg/xdg"
 )
 
 const (

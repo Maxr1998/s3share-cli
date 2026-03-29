@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"crypto/rand"
+
 	"github.com/maxr1998/s3share-cli/conf"
 )
 

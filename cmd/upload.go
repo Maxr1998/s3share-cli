@@ -18,12 +18,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/maxr1998/s3share-cli/conf"
 	"github.com/maxr1998/s3share-cli/core"
 	"github.com/maxr1998/s3share-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 )
 
 // uploadCmd implements the upload [file]… command

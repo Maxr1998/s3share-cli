@@ -3,9 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/maxr1998/s3share-cli/store"
 	"github.com/maxr1998/s3share-cli/util"
-	"net/http"
 )
 
 type Response struct {

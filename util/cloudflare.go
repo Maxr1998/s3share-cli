@@ -2,8 +2,9 @@ package util
 
 import (
 	"errors"
-	"github.com/cloudflare/cloudflare-go"
 	"strings"
+
+	"github.com/cloudflare/cloudflare-go"
 )
 
 func CollectResponseErrors(response cloudflare.Response) error {

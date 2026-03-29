@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/maxr1998/s3share-cli/core"
 	"github.com/maxr1998/s3share-cli/util"
 	"github.com/spf13/cobra"

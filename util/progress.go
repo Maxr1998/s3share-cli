@@ -1,10 +1,11 @@
 package util
 
 import (
-	"github.com/schollz/progressbar/v3"
 	"io"
 	"os"
 	"time"
+
+	"github.com/schollz/progressbar/v3"
 )
 
 // NewProgressReaderProvider wraps the provided upstreamReader and returns a new reader

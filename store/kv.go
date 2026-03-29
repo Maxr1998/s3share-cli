@@ -3,12 +3,13 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"os"
+
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/maxr1998/s3share-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
-	"os"
 )
 
 var cfAccountId *cloudflare.ResourceContainer
